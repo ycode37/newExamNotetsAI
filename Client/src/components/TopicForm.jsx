@@ -10,16 +10,18 @@ const TopicForm = ({ setResult, setLoading, loading, setError }) => {
   const [includeDiagram, setIncludeDiagram] = useState(false);
   const [includeChart, setIncludeChart] = useState(false);
 
-  const handleSubmit = async (params) => {
+  const handleSubmit = async () => {
     if (!topic.trim()) {
       setError("Please Enter The Topic");
       return;
     }
+
     setError("");
     setLoading(true);
     setResult(null);
+
     try {
-      const result = generateNotes({
+      const result = await generateNotes({
         topic,
         classLevel,
         examType,
@@ -27,10 +29,13 @@ const TopicForm = ({ setResult, setLoading, loading, setError }) => {
         includeChart,
         includeDiagram,
       });
-      setResult(result.data);
-      setLoading(false);
+
+      console.log("🔥 BACKEND RESPONSE:", result);
+
+      setResult(result);
     } catch (error) {
-      console.log(error);
+      console.log("🔥 ERROR:", error);
+    } finally {
       setLoading(false);
     }
   };

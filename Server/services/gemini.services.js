@@ -1,8 +1,9 @@
 const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 export const generateGeminiResponses = async (prompt) => {
   try {
+    console.log("🔥 BEFORE FETCH");
     const response = await fetch(
       `${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -13,25 +14,27 @@ export const generateGeminiResponses = async (prompt) => {
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
+              parts: [{ text: prompt }],
             },
           ],
         }),
       },
     );
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(err);
-    }
-    const data = response.json();
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    console.log("🔥 AFTER FETCH");
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Gemini API HTTP Error:", errText);
+      return "AI service failed to generate response.";
+    }
+
+    const data = await response.json(); // ✅ FIXED
+
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
     if (!text) {
-      throw new Error("No Text Returned from Gemini");
+      console.error("Gemini returned empty response:", data);
+      return "AI service returned no content.";
     }
 
     const cleanText = text
@@ -39,8 +42,17 @@ export const generateGeminiResponses = async (prompt) => {
       .replace(/```/g, "")
       .trim();
 
-    return JSON.parse(cleanText);
+    // Try parsing JSON safely
+    try {
+      return JSON.parse(cleanText);
+    } catch {
+      // If it's not valid JSON, return raw text instead of crashing
+      return cleanText;
+    }
   } catch (error) {
-    throw new Error("GEMINI API FAILED");
+    console.error("Gemini Service Fatal Error:", error.message);
+
+    // DO NOT THROW
+    return "AI service is temporarily unavailable.";
   }
 };

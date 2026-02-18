@@ -4,6 +4,9 @@ import { generateGeminiResponses } from "../services/gemini.services.js";
 import { buildPrompt } from "../utils/promptBuilder.js";
 
 export const generateNotes = async (req, res) => {
+  console.log("🔥 generateNotes route hit");
+  console.log("REQ.USERID:", req.userId);
+
   try {
     const {
       topic,
@@ -13,18 +16,23 @@ export const generateNotes = async (req, res) => {
       includeDiagram = false,
       includeChart = false,
     } = req.body;
+
     if (!topic) {
       return res.status(400).json({ message: "Topic is Required" });
     }
+
     const user = await User.findById(req.userId);
+
     if (!user) {
       return res.status(400).json({ message: "User Not Found" });
     }
+
     if (user.credits < 10) {
       user.isCreditAvailaible = false;
       await user.save();
       return res.status(403).json({ message: "Insufficient Credits" });
     }
+
     const prompt = buildPrompt({
       topic,
       classLevel,
@@ -34,8 +42,10 @@ export const generateNotes = async (req, res) => {
       includeChart,
     });
 
-    const aiResponse = generateGeminiResponses(prompt);
-
+    // ✅ FIX 1: await Gemini
+    const aiResponse = await generateGeminiResponses(prompt);
+    console.log("AI RESPONSE:", aiResponse);
+    console.log("TYPE:", typeof aiResponse);
     const notes = await Notes.create({
       user: user._id,
       topic,
@@ -48,13 +58,28 @@ export const generateNotes = async (req, res) => {
     });
 
     user.credits -= 10;
+
     if (user.credits <= 0) {
       user.isCreditAvailaible = false;
     }
+
     if (!Array.isArray(user.notes)) {
       user.notes = [];
     }
-    user.notes.push(note._id);
+
+    user.notes.push(notes._id);
     await user.save();
-  } catch (error) {}
+
+    // ✅ FIX 2: SEND RESPONSE
+    return res.status(200).json({
+      message: "Notes generated successfully",
+      notes,
+    });
+  } catch (error) {
+    console.error("🔥 FULL ERROR:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
 };

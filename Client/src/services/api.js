@@ -24,6 +24,7 @@ export const generateNotes = async (payload) => {
     );
     return result.data;
   } catch (error) {
-    console.log(error);
+    console.log("FRONTEND ERROR:", error.response?.data || error.message);
+    throw error; // rethrow so calling component sees it
   }
 };
