@@ -72,8 +72,9 @@ export const generateNotes = async (req, res) => {
 
     // ✅ FIX 2: SEND RESPONSE
     return res.status(200).json({
-      message: "Notes generated successfully",
-      notes,
+      data: aiResponse,
+      noteId: notes._id,
+      creditsLeft: user.credits,
     });
   } catch (error) {
     console.error("🔥 FULL ERROR:", error);

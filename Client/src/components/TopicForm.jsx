@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { generateNotes } from "../services/api";
+import { useDispatch } from "react-redux";
+import { setuserData, updateCredits } from "../redux/userSlice"; // Using setuserData to keep it consistent with your Auth logic
 
 const TopicForm = ({ setResult, setLoading, loading, setError }) => {
   const [topic, setTopic] = useState("");
@@ -9,6 +11,9 @@ const TopicForm = ({ setResult, setLoading, loading, setError }) => {
   const [revisionMode, setRevisionMode] = useState(false);
   const [includeDiagram, setIncludeDiagram] = useState(false);
   const [includeChart, setIncludeChart] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressText, setProgressText] = useState("");
+  const dispatch = useDispatch();
 
   const handleSubmit = async () => {
     if (!topic.trim()) {
@@ -32,13 +37,58 @@ const TopicForm = ({ setResult, setLoading, loading, setError }) => {
 
       console.log("🔥 BACKEND RESPONSE:", result);
 
-      setResult(result);
+      // 1. Update Redux credits if they exist in response
+      if (result && result.creditsLeft !== undefined) {
+        dispatch(updateCredits(result.creditsLeft));
+      }
+
+      // 2. Set result for display (backend wraps AI response in result.data)
+      setResult(result.data);
+
+      // 3. Reset form to normal
+      setTopic("");
+      setClassLevel("");
+      setExamType("");
+      setRevisionMode(false);
+      setIncludeDiagram(false);
+      setIncludeChart(false);
     } catch (error) {
-      console.log("🔥 ERROR:", error);
+      console.error("🔥 ERROR:", error);
+      const msg =
+        error?.response?.data?.message ||
+        "Failed to generate notes. Please try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!loading) {
+      setProgress(0);
+      setProgressText("");
+      return;
+    }
+    let value = 0;
+
+    const interval = setInterval(() => {
+      value += Math.random() * 8;
+
+      if (value >= 95) {
+        value = 95;
+        setProgressText("Almost Done");
+        clearInterval(interval);
+      } else if (value > 70) {
+        setProgressText("Finalizing Notes");
+      } else if (value > 40) {
+        setProgressText("Processing Content");
+      } else {
+        setProgressText("Generating Notes");
+      }
+      setProgress(Math.floor(value));
+    }, 700);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   return (
     <motion.div
@@ -97,11 +147,30 @@ const TopicForm = ({ setResult, setLoading, loading, setError }) => {
       >
         {loading ? "Generating Notes..." : "Generate Notes"}
       </motion.button>
+
+      {/* Loading State UI */}
+      {loading && (
+        <div className="space-y-4 pt-4">
+          <div className="w-full bg-black/5 h-[2px] rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              className="h-full bg-black"
+            />
+          </div>
+          <div className="flex justify-between items-center text-[9px] uppercase tracking-[0.2em] font-bold text-black/40">
+            <span>{progressText}</span>
+            <span className="tabular-nums">{progress}%</span>
+          </div>
+          <p className="text-center text-[10px] text-black/30 italic">
+            This may take 2-5 minutes so Please Wait !!
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 };
 
-/* Internal UI Components for Cleanliness */
 function InputField({ placeholder, value, onChange }) {
   return (
     <input
