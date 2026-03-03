@@ -12,9 +12,20 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT;
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://new-exam-notets-ai.vercel.app",
+];
+
 app.use(
   cors({
-    origin: "https://new-exam-notets-ai.vercel.app",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
