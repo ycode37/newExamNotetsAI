@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import React, { useState, useEffect } from "react";
 import { generateNotes } from "../services/api";
 import { useDispatch } from "react-redux";
-import { setuserData, updateCredits } from "../redux/userSlice"; // Using setuserData to keep it consistent with your Auth logic
+import { updateCredits } from "../redux/userSlice";
 
 const TopicForm = ({ setResult, setLoading, loading, setError }) => {
   const [topic, setTopic] = useState("");
@@ -54,6 +54,10 @@ const TopicForm = ({ setResult, setLoading, loading, setError }) => {
       setIncludeChart(false);
     } catch (error) {
       console.error("🔥 ERROR:", error);
+      const creditsLeft = error?.response?.data?.creditsLeft;
+      if (creditsLeft !== undefined) {
+        dispatch(updateCredits(creditsLeft));
+      }
       const msg =
         error?.response?.data?.message ||
         "Failed to generate notes. Please try again.";

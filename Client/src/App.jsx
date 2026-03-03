@@ -9,7 +9,8 @@ import Pricing from "./pages/Pricing.jsx";
 import Notes from "./pages/Notes.jsx";
 import History from "./pages/History.jsx";
 
-export const serverUrl = "https://newexamnotetsai.onrender.com";
+export const serverUrl =
+  import.meta.env.VITE_SERVER_URL || "https://newexamnotetsai.onrender.com";
 
 function App() {
   const dispatch = useDispatch();
@@ -18,6 +19,7 @@ function App() {
   }, [dispatch]);
 
   const { userData, loading } = useSelector((state) => state.user);
+  const isAuthenticated = userData !== null;
   console.log(userData);
 
   if (loading) {
@@ -29,23 +31,29 @@ function App() {
       <Routes>
         <Route
           path="/"
-          element={userData ? <Home /> : <Navigate to="/auth" replace />}
+          element={isAuthenticated ? <Home /> : <Navigate to="/auth" replace />}
         />
         <Route
           path="/auth"
-          element={userData ? <Navigate to="/" replace /> : <Auth />}
+          element={isAuthenticated ? <Navigate to="/" replace /> : <Auth />}
         />
         <Route
           path="/history"
-          element={userData ? <History /> : <Navigate to="/auth" replace />}
+          element={
+            isAuthenticated ? <History /> : <Navigate to="/auth" replace />
+          }
         ></Route>
         <Route
           path="/pricing"
-          element={userData ? <Pricing /> : <Navigate to="/auth" replace />}
+          element={
+            isAuthenticated ? <Pricing /> : <Navigate to="/auth" replace />
+          }
         ></Route>
         <Route
           path="notes"
-          element={userData ? <Notes /> : <Navigate to="/auth" replace />}
+          element={
+            isAuthenticated ? <Notes /> : <Navigate to="/auth" replace />
+          }
         ></Route>
       </Routes>
     </div>

@@ -12,7 +12,9 @@ const isAuth = (req, res, next) => {
     }
     req.userId = verifyToken.userId;
     next();
-  } catch (error) {}
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
 };
 
 export default isAuth;

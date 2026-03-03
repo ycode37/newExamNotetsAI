@@ -30,7 +30,10 @@ export const generateNotes = async (req, res) => {
     if (user.credits < 10) {
       user.isCreditAvailaible = false;
       await user.save();
-      return res.status(403).json({ message: "Insufficient Credits" });
+      return res.status(403).json({
+        message: "Insufficient Credits",
+        creditsLeft: user.credits,
+      });
     }
 
     const prompt = buildPrompt({
@@ -42,10 +45,18 @@ export const generateNotes = async (req, res) => {
       includeChart,
     });
 
-    // ✅ FIX 1: await Gemini
-    const aiResponse = await generateGeminiResponses(prompt);
+    let aiResponse;
+    try {
+      aiResponse = await generateGeminiResponses(prompt);
+    } catch (error) {
+      return res.status(error.status || 502).json({
+        message: error.message || "AI service failed to generate response.",
+      });
+    }
+
     console.log("AI RESPONSE:", aiResponse);
     console.log("TYPE:", typeof aiResponse);
+
     const notes = await Notes.create({
       user: user._id,
       topic,
@@ -70,7 +81,6 @@ export const generateNotes = async (req, res) => {
     user.notes.push(notes._id);
     await user.save();
 
-    // ✅ FIX 2: SEND RESPONSE
     return res.status(200).json({
       data: aiResponse,
       noteId: notes._id,

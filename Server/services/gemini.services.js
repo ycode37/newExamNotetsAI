@@ -3,7 +3,12 @@ const GEMINI_URL =
 
 export const generateGeminiResponses = async (prompt) => {
   try {
-    console.log("🔥 BEFORE FETCH");
+    if (!process.env.GEMINI_API_KEY) {
+      const missingKeyError = new Error("GEMINI_API_KEY is not configured.");
+      missingKeyError.status = 500;
+      throw missingKeyError;
+    }
+
     const response = await fetch(
       `${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -21,20 +26,37 @@ export const generateGeminiResponses = async (prompt) => {
       },
     );
 
-    console.log("🔥 AFTER FETCH");
     if (!response.ok) {
       const errText = await response.text();
       console.error("Gemini API HTTP Error:", errText);
-      return "AI service failed to generate response.";
+
+      let parsedErrorMessage = `Gemini API request failed with status ${response.status}`;
+      try {
+        const parsedError = JSON.parse(errText);
+        parsedErrorMessage =
+          parsedError?.error?.message ||
+          parsedError?.message ||
+          parsedErrorMessage;
+      } catch {
+        if (errText) {
+          parsedErrorMessage = errText;
+        }
+      }
+
+      const geminiError = new Error(parsedErrorMessage.trim());
+      geminiError.status = response.status;
+      throw geminiError;
     }
 
-    const data = await response.json(); // ✅ FIXED
+    const data = await response.json();
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
       console.error("Gemini returned empty response:", data);
-      return "AI service returned no content.";
+      const emptyResponseError = new Error("Gemini returned no content.");
+      emptyResponseError.status = 502;
+      throw emptyResponseError;
     }
 
     const cleanText = text
@@ -46,13 +68,14 @@ export const generateGeminiResponses = async (prompt) => {
     try {
       return JSON.parse(cleanText);
     } catch {
-      // If it's not valid JSON, return raw text instead of crashing
       return cleanText;
     }
   } catch (error) {
     console.error("Gemini Service Fatal Error:", error.message);
-
-    // DO NOT THROW
-    return "AI service is temporarily unavailable.";
+    const serviceError = new Error(
+      error?.message || "AI service failed to generate response.",
+    );
+    serviceError.status = error?.status || 502;
+    throw serviceError;
   }
 };
