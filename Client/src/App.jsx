@@ -9,7 +9,7 @@ import Pricing from "./pages/Pricing.jsx";
 import Notes from "./pages/Notes.jsx";
 import History from "./pages/History.jsx";
 
-export const serverUrl = "http://localhost:8000";
+export const serverUrl = "https://newexamnotetsai.onrender.com";
 
 function App() {
   const dispatch = useDispatch();
