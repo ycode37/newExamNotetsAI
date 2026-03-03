@@ -18,7 +18,7 @@ export const googleAuth = async (req, res) => {
     };
 
     res.cookie("token", token, cookieOptions);
-    return res.status(200).json({ user });
+    return res.status(200).json({ user, token });
   } catch (error) {
     return res.status(500).json({ message: `Server Error ${error}` });
   }

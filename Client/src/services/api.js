@@ -2,10 +2,17 @@ import axios from "axios";
 import { serverUrl } from "../App";
 import { setuserData, setLoading } from "../redux/userSlice";
 
+// Helper to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const getCurrentUser = async (dispatch) => {
   try {
     const result = await axios.get(`${serverUrl}/api/user/currentUser`, {
       withCredentials: true,
+      headers: getAuthHeaders(),
     });
     dispatch(setuserData(result.data));
     console.log(result.data);
@@ -20,7 +27,7 @@ export const generateNotes = async (payload) => {
     const result = await axios.post(
       serverUrl + "/api/notes/generate-notes",
       payload,
-      { withCredentials: true },
+      { withCredentials: true, headers: getAuthHeaders() },
     );
     return result.data;
   } catch (error) {
@@ -37,6 +44,7 @@ export const downloadPDF = async (result) => {
       {
         responseType: "blob",
         withCredentials: true,
+        headers: getAuthHeaders(),
       },
     );
     const blob = new Blob([response.data], {

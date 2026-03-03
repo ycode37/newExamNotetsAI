@@ -20,7 +20,13 @@ const Navbar = () => {
     try {
       await axios.get(serverUrl + "/api/auth/logout", {
         withCredentials: true,
+        headers: {
+          ...(localStorage.getItem("token")
+            ? { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            : {}),
+        },
       });
+      localStorage.removeItem("token");
       dispatch(setuserData(null));
       navigate("/auth");
     } catch (error) {

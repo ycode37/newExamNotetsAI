@@ -19,6 +19,11 @@ function History() {
         setError(null);
         const res = await axios.get(`${serverUrl}/api/notes/getnotes`, {
           withCredentials: true,
+          headers: {
+            ...(localStorage.getItem("token")
+              ? { Authorization: `Bearer ${localStorage.getItem("token")}` }
+              : {}),
+          },
         });
         const list = Array.isArray(res.data)
           ? res.data

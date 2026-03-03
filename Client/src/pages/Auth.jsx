@@ -26,6 +26,10 @@ const Auth = () => {
         { name, email },
         { withCredentials: true },
       );
+      // Store token for cross-origin auth (cookies blocked cross-domain)
+      if (result.data.token) {
+        localStorage.setItem("token", result.data.token);
+      }
       dispatch(setuserData(result.data.user));
     } catch (e) {
       console.error("Auth Error:", e);
